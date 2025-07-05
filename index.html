@@ -485,6 +485,7 @@
         <button id="new-game-menu-btn" class="menu-btn">New Game</button>
         <button id="undo-btn" class="menu-btn">Undo</button>
         <button id="hint-btn" class="menu-btn">Hint</button>
+        <button id="solve-btn" class="menu-btn">Magic Solve</button>
         <button id="start-robot-btn" class="menu-btn">Start Robot</button>
         <button id="stop-robot-btn" class="menu-btn" style="display: none;">Stop Robot</button>
         <button id="deck-btn" class="menu-btn">Deck</button>
@@ -517,6 +518,7 @@
         const undoBtn = document.getElementById('undo-btn');
         const undoMainBtn = document.getElementById('undo-main-btn');
         const hintBtn = document.getElementById('hint-btn');
+        const solveBtn = document.getElementById('solve-btn');
         const startRobotBtn = document.getElementById('start-robot-btn');
         const stopRobotBtn = document.getElementById('stop-robot-btn');
         const deckBtn = document.getElementById('deck-btn');
@@ -528,10 +530,10 @@
         const root = document.documentElement;
 
         // --- Game Constants ---
-        const SUITS = ['♥', '♦', '♠', '♣'];
+        const SUITS = ['♠', '♥', '♣', '♦'];
         const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
         const RANK_VALUES = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
-        const OVERLAP_OFFSET = 25; // --- FIX: Use a fixed JS constant for the offset ---
+        const OVERLAP_OFFSET = 25;
 
         // --- Game State ---
         let deck = [];
@@ -571,7 +573,6 @@
                 const face = `<div class="face"><div class="top-left"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div><div class="center-suit">${this.suit}</div><div class="bottom-right"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div></div>`;
                 const back = `<div class="back"></div>`;
                 cardDiv.innerHTML = face + back;
-                cardDiv.addEventListener('dblclick', onSingleCardDoubleClick);
                 cardDiv.addEventListener('mousedown', startDrag);
                 cardDiv.addEventListener('touchstart', startDrag);
                 return cardDiv;
@@ -699,6 +700,7 @@
         undoBtn.addEventListener('click', undoMove);
         undoMainBtn.addEventListener('click', undoMove);
         hintBtn.addEventListener('click', showHint);
+        solveBtn.addEventListener('click', magicSolve);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace') {
@@ -1419,6 +1421,33 @@
             sideMenu.classList.toggle('open');
             document.body.classList.toggle('menu-open');
         });
+        
+        // --- FIX: Add the missing magicSolve function ---
+        function magicSolve() {
+            if (!isGameActive) return;
+            stopRobot();
+
+            // Clear all game piles
+            stock = [];
+            waste = [];
+            tableaus.forEach(p => p.length = 0);
+            foundations.forEach(p => p.length = 0);
+
+            // Create a complete, ordered deck for each suit
+            for (let i = 0; i < SUITS.length; i++) {
+                const suit = SUITS[i];
+                for (let j = 0; j < RANKS.length; j++) {
+                    const rank = RANKS[j];
+                    const card = new Card(suit, rank);
+                    card.flip(true);
+                    foundations[i].push(card);
+                }
+            }
+
+            // Render the solved state and trigger the win
+            renderAllPiles();
+            checkWinCondition();
+        }
 
         // --- Start the game ---
         initGame();
