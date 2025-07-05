@@ -571,6 +571,7 @@
                 const face = `<div class="face"><div class="top-left"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div><div class="center-suit">${this.suit}</div><div class="bottom-right"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div></div>`;
                 const back = `<div class="back"></div>`;
                 cardDiv.innerHTML = face + back;
+                cardDiv.addEventListener('dblclick', onSingleCardDoubleClick);
                 cardDiv.addEventListener('mousedown', startDrag);
                 cardDiv.addEventListener('touchstart', startDrag);
                 return cardDiv;
