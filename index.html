@@ -34,7 +34,7 @@
             background-color: var(--green-felt);
             font-family: 'Arial', sans-serif;
             user-select: none;
-            overflow: hidden;
+            overflow-x: hidden; /* Prevent horizontal scroll when menu is open */
             margin: 0;
             padding: 0;
             display: flex;
@@ -51,6 +51,7 @@
             margin: 0 auto;
             padding: var(--top-spacing) var(--side-spacing);
             box-sizing: border-box;
+            transition: transform 0.3s ease-in-out; /* For menu push effect */
         }
 
         /* --- Game Areas --- */
@@ -256,12 +257,19 @@
             box-shadow: 0 2px 0 #999;
         }
 
-        /* --- Hamburger Menu --- */
-        #menu-toggle {
+        /* --- UI Controls & Hamburger Menu --- */
+        #ui-controls {
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             left: 20px;
             z-index: 7000;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #menu-toggle, #undo-main-btn {
             width: 50px;
             height: 50px;
             background: #fff;
@@ -269,10 +277,16 @@
             box-shadow: 0 3px 6px rgba(0,0,0,0.2);
             cursor: pointer;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
+            border: none;
+            padding: 0;
         }
+
+        #menu-toggle {
+            flex-direction: column;
+        }
+
         #menu-toggle span {
             display: block;
             width: 25px;
@@ -281,6 +295,13 @@
             margin: 2px 0;
             transition: all 0.3s;
         }
+
+        #undo-main-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: #333;
+        }
+
         #side-menu {
             position: fixed;
             top: 0;
@@ -297,7 +318,11 @@
         #side-menu.open {
             transform: translateX(0);
         }
-
+        
+        body.menu-open #game-board,
+        body.menu-open #ui-controls {
+            transform: translateX(250px);
+        }
 
         /* --- Options Modal --- */
         #options-modal {
@@ -445,10 +470,15 @@
         <button id="new-game-win-btn" class="menu-btn">New Game</button>
     </div>
 
-    <div id="menu-toggle">
-        <span></span>
-        <span></span>
-        <span></span>
+    <div id="ui-controls">
+        <div id="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <button id="undo-main-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+        </button>
     </div>
 
     <div id="side-menu">
@@ -485,6 +515,7 @@
         const newGameWinBtn = document.getElementById('new-game-win-btn');
         const newGameMenuBtn = document.getElementById('new-game-menu-btn');
         const undoBtn = document.getElementById('undo-btn');
+        const undoMainBtn = document.getElementById('undo-main-btn');
         const hintBtn = document.getElementById('hint-btn');
         const startRobotBtn = document.getElementById('start-robot-btn');
         const stopRobotBtn = document.getElementById('stop-robot-btn');
@@ -500,6 +531,7 @@
         const SUITS = ['♥', '♦', '♠', '♣'];
         const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
         const RANK_VALUES = { 'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13 };
+        const OVERLAP_OFFSET = 25; // --- FIX: Use a fixed JS constant for the offset ---
 
         // --- Game State ---
         let deck = [];
@@ -511,6 +543,7 @@
         let moveHistory = [];
         let isRobotActive = false;
         let robotIntervalId = null;
+        let lastTap = 0;
 
         // --- Dragging State ---
         let draggedCards = [];
@@ -538,8 +571,8 @@
                 const face = `<div class="face"><div class="top-left"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div><div class="center-suit">${this.suit}</div><div class="bottom-right"><div class="rank">${this.rank}</div><div class="suit">${this.suit}</div></div></div>`;
                 const back = `<div class="back"></div>`;
                 cardDiv.innerHTML = face + back;
-                cardDiv.addEventListener('mousedown', onCardMouseDown);
-                cardDiv.addEventListener('dblclick', onSingleCardDoubleClick);
+                cardDiv.addEventListener('mousedown', startDrag);
+                cardDiv.addEventListener('touchstart', startDrag);
                 return cardDiv;
             }
 
@@ -613,8 +646,7 @@
         }
 
         function renderTableaus() {
-            const overlap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--overlap-offset'));
-            tableauPiles.forEach((pileEl, i) => renderPile(pileEl, tableaus[i], overlap));
+            tableauPiles.forEach((pileEl, i) => renderPile(pileEl, tableaus[i], OVERLAP_OFFSET));
         }
 
         function renderFoundations() {
@@ -664,6 +696,7 @@
         newGameWinBtn.addEventListener('click', initGame);
         newGameMenuBtn.addEventListener('click', initGame);
         undoBtn.addEventListener('click', undoMove);
+        undoMainBtn.addEventListener('click', undoMove);
         hintBtn.addEventListener('click', showHint);
 
         document.addEventListener('keydown', (e) => {
@@ -673,9 +706,29 @@
         });
         document.addEventListener('contextmenu', onAutoCompleteClick);
 
+        document.addEventListener('touchend', handleDoubleTap);
+        
+        function handleDoubleTap(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 300 && tapLength > 0) {
+                e.preventDefault();
+                const cardElement = e.target.closest('.card');
+                if (cardElement) {
+                    onSingleCardDoubleClick({ currentTarget: cardElement });
+                } else {
+                    onAutoCompleteClick(e);
+                }
+            }
+            lastTap = currentTime;
+        }
 
-        function onCardMouseDown(e) {
-            if (!isGameActive || isRobotActive || e.button !== 0) return;
+        function getEventCoords(e) {
+            return e.touches ? e.touches[0] : e;
+        }
+
+        function startDrag(e) {
+            if (!isGameActive || isRobotActive || (e.type === 'mousedown' && e.button !== 0)) return;
             e.preventDefault();
             e.stopPropagation(); 
             const cardElement = e.currentTarget;
@@ -714,8 +767,9 @@
                 }
             }
             
-            dragOffsetX = e.clientX - initialRect.left;
-            dragOffsetY = e.clientY - initialRect.top;
+            const coords = getEventCoords(e);
+            dragOffsetX = coords.clientX - initialRect.left;
+            dragOffsetY = coords.clientY - initialRect.top;
 
             const boardRect = gameBoard.getBoundingClientRect();
             draggedCards.forEach((card, i) => {
@@ -727,7 +781,7 @@
                 const initialTop = initialRect.top - boardRect.top;
                 
                 const overlap = (sourcePileElement.classList.contains('tableau')) 
-                    ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--overlap-offset'))
+                    ? OVERLAP_OFFSET
                     : 0;
 
                 cardElToMove.style.left = `${initialLeft}px`;
@@ -736,17 +790,22 @@
                 gameBoard.appendChild(cardElToMove);
             });
             
-            document.addEventListener('mousemove', onDragMove);
-            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
         }
 
-        function onDragMove(e) {
+        function drag(e) {
             if (draggedCards.length === 0) return;
+            if (e.type === 'touchmove') e.preventDefault();
+            
+            const coords = getEventCoords(e);
             const boardRect = gameBoard.getBoundingClientRect();
-            const newX = e.clientX - boardRect.left - dragOffsetX;
-            const newY = e.clientY - boardRect.top - dragOffsetY;
+            const newX = coords.clientX - boardRect.left - dragOffsetX;
+            const newY = coords.clientY - boardRect.top - dragOffsetY;
             const overlap = (sourcePileElement.classList.contains('tableau')) 
-                    ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--overlap-offset'))
+                    ? OVERLAP_OFFSET
                     : 0;
 
             draggedCards.forEach((card, i) => {
@@ -755,7 +814,7 @@
             });
         }
 
-        function onDragEnd(e) {
+        function endDrag(e) {
             if (draggedCards.length === 0) return;
 
             const dropTarget = findBestDropTarget();
@@ -784,8 +843,10 @@
             draggedCards = [];
             renderAllPiles(); 
 
-            document.removeEventListener('mousemove', onDragMove);
-            document.removeEventListener('mouseup', onDragEnd);
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
         }
         
         function onSingleCardDoubleClick(e) {
@@ -1355,6 +1416,7 @@
 
         menuToggle.addEventListener('click', () => {
             sideMenu.classList.toggle('open');
+            document.body.classList.toggle('menu-open');
         });
 
         // --- Start the game ---
