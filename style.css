@@ -1,0 +1,435 @@
+/* --- Basic Setup & Typography --- */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+:root {
+    --green-felt: #008000;
+    --card-border: #000000;
+    --card-bg: #ffffff;
+    --red-suit: #ff0000;
+    --black-suit: #000000;
+    --card-width: 100px;
+    --card-height: 140px;
+    --card-border-radius: 8px;
+    --overlap-offset: 25px;
+    --top-spacing: 20px;
+    --side-spacing: 20px;
+    
+    /* Default Card Back Theme (Classic Blue) */
+    --card-back-primary: #0000a0;
+    --card-back-secondary: #5555ff;
+    --card-back-pattern: linear-gradient(45deg, var(--card-back-secondary) 25%, transparent 25%), 
+                            linear-gradient(-45deg, var(--card-back-secondary) 25%, transparent 25%),
+                            linear-gradient(45deg, transparent 75%, var(--card-back-secondary) 75%),
+                            linear-gradient(-45deg, transparent 75%, var(--card-back-secondary) 75%);
+}
+
+body {
+    background-color: var(--green-felt);
+    font-family: 'Arial', sans-serif;
+    user-select: none;
+    overflow-x: hidden; /* Prevent horizontal scroll when menu is open */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+html, body {
+    overscroll-behavior: none;
+}
+
+/* --- Game Container --- */
+#game-board {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--top-spacing) var(--side-spacing);
+    box-sizing: border-box;
+    transition: transform 0.3s ease-in-out; /* For menu push effect */
+}
+
+/* --- Game Areas --- */
+.game-area {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.top-area {
+    height: calc(var(--card-height) + 10px);
+    margin-bottom: 20px;
+}
+
+.tableau-area {
+    min-height: calc(var(--card-height) * 2);
+}
+
+/* --- Piles (Foundations, Tableau, Stock, Waste) --- */
+.pile {
+    position: relative;
+    width: var(--card-width);
+    height: var(--card-height);
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--card-border-radius);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.pile.foundation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pile.foundation::before {
+    font-size: 80px;
+    color: rgba(255, 255, 255, 0.15);
+    font-family: 'Times New Roman', serif;
+}
+
+#foundation-0::before { content: '♠'; }
+#foundation-1::before { content: '♥'; }
+#foundation-2::before { content: '♣'; }
+#foundation-3::before { content: '♦'; }
+
+/* --- Stock Pile Visuals --- */
+.pile.stock {
+    background-color: transparent;
+    border: 2px solid rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+#stock-visual-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#stock-visual-container .card-stack {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--card-border-radius);
+    background-color: var(--card-bg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: top 0.2s, left 0.2s;
+}
+
+/* --- Card Styling --- */
+.card {
+    width: var(--card-width);
+    height: var(--card-height);
+    border-radius: var(--card-border-radius);
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: grab;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: top 0.15s ease-out, left 0.15s ease-out;
+}
+
+.card.dragging {
+    cursor: grabbing;
+    z-index: 1000;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
+    transition: none; /* Disable transition while dragging for responsiveness */
+}
+
+/* Card Face */
+.card .face {
+    width: 100%;
+    height: 100%;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-border-radius);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 5px;
+    position: relative;
+}
+
+.card .rank, .card .suit {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.card .top-left, .card .bottom-right {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card .top-left { top: 5px; left: 8px; }
+.card .bottom-right { bottom: 5px; right: 8px; transform: rotate(180deg); }
+
+.card.red { color: var(--red-suit); }
+.card.black { color: var(--black-suit); }
+
+.card .center-suit {
+    font-size: 50px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Card Back (XP Style) */
+.card .back, #stock-visual-container .card-stack, .deck-preview {
+    width: 100%;
+    height: 100%;
+    background-color: var(--card-back-primary);
+    border-radius: var(--card-border-radius);
+    position: relative;
+    background-image: var(--card-back-pattern);
+    background-size: 10px 10px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+    border: 5px solid white;
+    box-sizing: border-box;
+}
+
+.card .back::before, #stock-visual-container .card-stack::before, .deck-preview::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid black;
+    border-radius: 2px;
+}
+
+.card.face-down .face { display: none; }
+.card.face-up .back { display: none; }
+
+/* --- Tableau Pile Card Stacking --- */
+.tableau .card {
+    position: absolute;
+}
+
+/* --- Win Animation --- */
+.win-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    flex-direction: column;
+}
+.win-message {
+    color: white;
+    font-family: 'VT323', monospace;
+    font-size: 8rem;
+    text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+    animation: pulse 1.5s infinite;
+}
+
+.menu-btn {
+    margin-bottom: 15px;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    font-family: 'VT323', monospace;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border: 2px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 0 #999;
+    transition: all 0.1s ease-in-out;
+    width: 100%;
+    text-align: left;
+}
+
+.menu-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #999;
+}
+
+/* --- UI Controls & Hamburger Menu --- */
+#ui-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 7000;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+#menu-toggle, #undo-main-btn {
+    width: 50px;
+    height: 50px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    padding: 0;
+}
+
+#menu-toggle {
+    flex-direction: column;
+}
+
+#menu-toggle span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: #333;
+    margin: 2px 0;
+    transition: all 0.3s;
+}
+
+#undo-main-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: #333;
+}
+
+#side-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100%;
+    background: #e9e9e9;
+    z-index: 6500;
+    padding: 80px 20px 20px;
+    box-shadow: 3px 0 6px rgba(0,0,0,0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+}
+#side-menu.open {
+    transform: translateX(0);
+}
+
+body.menu-open #game-board,
+body.menu-open #ui-controls {
+    transform: translateX(250px);
+}
+
+/* --- Options Modal --- */
+#options-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    z-index: 8000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+#options-modal-content {
+    background-color: #eee;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+#options-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+#options-modal-header h2 {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+}
+#close-modal-btn {
+    font-size: 2rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+#deck-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 20px;
+}
+.deck-preview {
+    width: var(--card-width);
+    height: var(--card-height);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+.deck-preview:hover, .deck-preview.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 10px #007bff;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.hint-highlight {
+    box-shadow: 0 0 15px 5px yellow !important;
+    border: 2px solid yellow !important;
+    animation: pulse-yellow 0.7s infinite alternate;
+}
+@keyframes pulse-yellow {
+    from { box-shadow: 0 0 15px 5px yellow; }
+    to { box-shadow: 0 0 25px 10px gold; }
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 850px) {
+    :root {
+        --card-width: 80px;
+        --card-height: 112px;
+        --overlap-offset: 20px;
+        --side-spacing: 10px;
+    }
+    .game-area { gap: 10px; }
+    .card .rank, .card .suit { font-size: 16px; }
+    .card .center-suit { font-size: 40px; }
+}
+
+@media (max-width: 650px) {
+    :root {
+        --card-width: 60px;
+        --card-height: 84px;
+        --overlap-offset: 18px;
+    }
+    .game-area { gap: 8px; }
+    .card .rank, .card .suit { font-size: 12px; }
+    .card .center-suit { font-size: 30px; }
+        .pile.foundation::before { font-size: 60px; }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --card-width: 45px;
+        --card-height: 63px;
+        --overlap-offset: 15px;
+        --top-spacing: 10px;
+    }
+    .game-area { gap: 5px; }
+    .card .rank, .card .suit { font-size: 10px; }
+    .card .center-suit { font-size: 22px; }
+    .win-message { font-size: 4rem; }
+    .menu-btn { padding: 10px 20px; font-size: 1.2rem; }
+    .pile.foundation::before { font-size: 40px; }
+}
