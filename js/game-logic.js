@@ -52,7 +52,7 @@ export function isValidTableauMove(card, tableauPile) {
     return !topCard ? card.rank === 'K' : card.color !== topCard.color && card.value === topCard.value - 1;
 }
 
-function updateScore(points) {
+export function updateScore(points) {
     state.updateState({ score: state.score + points });
     dom.scoreDisplay.textContent = `Score: ${state.score}`;
 }
