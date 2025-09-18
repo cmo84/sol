@@ -132,12 +132,24 @@ html, body {
     transition: top 0.15s ease-out, left 0.15s ease-out;
 }
 
-.card.dragging {
-    cursor: grabbing;
+.card.dragging-source {
+    opacity: 0.4;
+}
+
+#drag-ghost-container {
+    position: absolute;
     z-index: 1000;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-    transform: scale(1.05);
+    pointer-events: none; /* Allows drop events to go to elements underneath */
     transition: none; /* Disable transition while dragging for responsiveness */
+    transform: scale(1.05); /* Slightly larger like the old .dragging */
+}
+
+#drag-ghost-container .card {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    /* The ghost cards should be slightly transparent to see through */
+    opacity: 0.9;
+    /* Remove the cursor grabbing since it's on the ghost container now */
+    cursor: default;
 }
 
 /* Card Face */
@@ -255,6 +267,23 @@ html, body {
 }
 
 /* --- UI Controls & Hamburger Menu --- */
+.status-bar {
+    display: flex;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    font-family: 'VT323', monospace;
+    font-size: 1.4rem;
+    color: #333;
+}
+
+#timer-display, #score-display {
+    min-width: 120px; /* Prevents layout shift */
+    text-align: left;
+}
+
 #ui-controls {
     position: fixed;
     bottom: 20px;

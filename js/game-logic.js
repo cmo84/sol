@@ -13,10 +13,31 @@ function shuffle(array) {
     }
 }
 
+function stopTimer() {
+    if (state.timerIntervalId) {
+        clearInterval(state.timerIntervalId);
+        state.updateState({ timerIntervalId: null });
+    }
+}
+
+function startTimer() {
+    stopTimer(); // Ensure no multiple timers
+    state.updateState({ elapsedTime: 0 });
+
+    const timerId = setInterval(() => {
+        state.updateState({ elapsedTime: state.elapsedTime + 1 });
+        dom.timerDisplay.textContent = `Time: ${state.elapsedTime}`;
+    }, 1000);
+
+    state.updateState({ timerIntervalId: timerId });
+}
+
+
 export function checkWinCondition() {
     const totalCardsInFoundations = state.foundations.reduce((sum, pile) => sum + pile.length, 0);
     if (totalCardsInFoundations === 52) {
         state.updateState({ isGameActive: false });
+        stopTimer();
         startWinAnimation();
     }
 }
@@ -31,6 +52,11 @@ export function isValidTableauMove(card, tableauPile) {
     return !topCard ? card.rank === 'K' : card.color !== topCard.color && card.value === topCard.value - 1;
 }
 
+function updateScore(points) {
+    state.updateState({ score: state.score + points });
+    dom.scoreDisplay.textContent = `Score: ${state.score}`;
+}
+
 export function tryMoveToFoundation(cardsToMove, foundationId) {
     if (cardsToMove.length !== 1) return false;
     const card = cardsToMove[0];
@@ -38,6 +64,7 @@ export function tryMoveToFoundation(cardsToMove, foundationId) {
     const targetPile = state.foundations[pileIndex];
     if (isValidFoundationMove(card, targetPile)) {
         targetPile.push(card);
+        updateScore(10);
         return true;
     }
     return false;
@@ -102,6 +129,8 @@ export function createCard(suit, rank) {
 
 export function initGame() {
     stopRobot();
+    stopTimer();
+    startTimer();
     const newDeck = [];
     for (const suit of SUITS) {
         for (const rank of RANKS) {
@@ -139,10 +168,16 @@ export function initGame() {
 export function drawFromStock() {
     if (!state.isGameActive || state.isRobotActive) return;
     state.saveState();
+
     if (state.stock.length > 0) {
-        const cardToMove = state.stock.pop();
-        cardToMove.flip(true);
-        state.waste.push(cardToMove);
+        const cardsToMove = [];
+        const numToDraw = Math.min(state.drawCount, state.stock.length);
+        for (let i = 0; i < numToDraw; i++) {
+            const card = state.stock.pop();
+            card.flip(true);
+            cardsToMove.push(card);
+        }
+        state.waste.push(...cardsToMove);
     } else if (state.waste.length > 0) {
         const newStock = state.waste.reverse();
         newStock.forEach(card => card.flip(false));
