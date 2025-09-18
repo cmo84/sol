@@ -30,6 +30,8 @@
             <div class="pile tableau" id="tableau-5"></div>
             <div class="pile tableau" id="tableau-6"></div>
         </div>
+
+        <div id="drag-ghost-container"></div>
     </div>
     
     <div class="win-overlay" id="win-overlay">
@@ -38,6 +40,10 @@
     </div>
 
     <div id="ui-controls">
+        <div class="status-bar">
+            <div id="score-display">Score: 0</div>
+            <div id="timer-display">Time: 0</div>
+        </div>
         <div id="menu-toggle">
             <span></span>
             <span></span>
@@ -50,6 +56,7 @@
 
     <div id="side-menu">
         <button id="new-game-menu-btn" class="menu-btn">New Game</button>
+        <button id="draw-mode-btn" class="menu-btn">Draw 1</button>
         <button id="undo-btn" class="menu-btn">Undo</button>
         <button id="hint-btn" class="menu-btn">Hint</button>
         <button id="solve-btn" class="menu-btn">Magic Solve</button>

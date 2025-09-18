@@ -22,12 +22,16 @@ function renderFoundations() {
 
 function renderWaste() {
     dom.wastePile.innerHTML = '';
-    if (state.waste.length > 0) {
-        const topCard = state.waste[state.waste.length - 1];
-        dom.wastePile.appendChild(topCard.element);
-        topCard.element.style.top = '0px';
-        topCard.element.style.left = '0px';
-    }
+    const cardsToDisplay = state.drawCount === 1 ? state.waste.slice(-1) : state.waste.slice(-3);
+
+    cardsToDisplay.forEach((card, index) => {
+        dom.wastePile.appendChild(card.element);
+        // Stagger the cards slightly for "Draw 3" mode
+        const offset = state.drawCount === 3 ? index * (OVERLAP_OFFSET / 2) : 0;
+        card.element.style.left = `${offset}px`;
+        card.element.style.top = '0px';
+        card.element.style.zIndex = index;
+    });
 }
 
 function renderStock() {

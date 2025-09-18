@@ -168,7 +168,14 @@ function populateDeckOptions() {
     });
 }
 
+function toggleDrawMode() {
+    state.updateState({ drawCount: state.drawCount === 1 ? 3 : 1 });
+    dom.drawModeBtn.textContent = `Draw ${state.drawCount}`;
+    // Maybe force a re-render of waste if needed, or handle in game logic
+}
+
 export function initializeUI() {
+    dom.drawModeBtn.addEventListener('click', toggleDrawMode);
     document.addEventListener('touchend', handleDoubleTap);
     document.addEventListener('contextmenu', onAutoCompleteClick);
     document.addEventListener('keydown', (e) => { if (e.key === 'Backspace') undoMove(); });
