@@ -1,7 +1,7 @@
 import * as dom from './dom.js';
 import * as state from './state.js';
 import { renderAllPiles } from './render.js';
-import { tryMoveToFoundation, tryMoveToTableau, checkWinCondition } from './game-logic.js';
+import { tryMoveToFoundation, tryMoveToTableau, checkWinCondition, updateScore } from './game-logic.js';
 import { OVERLAP_OFFSET, DOUBLE_CLICK_SPEED } from './constants.js';
 
 let dragOffsetX, dragOffsetY;
